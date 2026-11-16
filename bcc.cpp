@@ -6,15 +6,18 @@ using namespace std;
 // 均为 O(n+m)。递归 DFS 长链深度 O(n)，注意栈大小。
 
 // 点双 + 割点 + 圆方树。点双按顶点集合输出，桥两端也算一个点双。
+// 每条非自环边恰属一个点双；edge_bel[id] 给出它在 bcc 中的下标。
 struct VBCC{
     int n,m = 0,tim = 0;
     vector<vector<pair<int,int>>> g; // {邻点,无向边编号}
     vector<vector<int>> bcc; // bcc[0..size-1]，割点可在多个集合中。
-    vector<int> dfn,low,st;
+    vector<int> dfn,low,st,est; // st 是点栈，est 是尚未归属点双的边栈。
+    vector<int> edge_bel; // 边编号 -> 点双编号，从 0 开始；忽略的自环为 -1。
     vector<char> cut;
     VBCC(int n):n(n),g(n+1),dfn(n+1),low(n+1),cut(n+1){}
     int add(int u,int v){
         int id = m++;
+        edge_bel.push_back(-1);
         if(u != v)g[u].push_back({v,id}),g[v].push_back({u,id});
         return id;
     }
@@ -26,23 +29,35 @@ struct VBCC{
             if(id == pe)continue; // 跳过父边，不能跳过所有通向父点的边。
             if(!dfn[v]){
                 ++child;
+                est.push_back(id); // 树边先入栈，整个子树处理完再判断是否出块。
                 dfs(v,id);
                 low[u] = min(low[u],low[v]);
                 if(low[v] >= dfn[u]){
                     if(pe != -1 || child > 1)cut[u] = 1;
+                    int c = bcc.size();
                     bcc.push_back({u});
+                    // 弹到树边 (u,v) 为止，这些边恰好属于当前点双。
+                    int eid;
+                    do{
+                        eid = est.back(),est.pop_back();
+                        edge_bel[eid] = c;
+                    }while(eid != id);
                     int x;
                     do{
                         x = st.back(),st.pop_back();
                         bcc.back().push_back(x);
                     }while(x != v);
                 }
-            }else low[u] = min(low[u],dfn[v]);
+            }else if(dfn[v] < dfn[u]){
+                low[u] = min(low[u],dfn[v]);
+                est.push_back(id); // 返祖边只在较深端入栈一次；重边也各自记录。
+            }
         }
         if(pe == -1 && child == 0)bcc.push_back({u}); // 孤立点单独成块。
     }
     void run(){
-        tim = 0,st.clear(),bcc.clear();
+        tim = 0,st.clear(),est.clear(),bcc.clear();
+        fill(edge_bel.begin(),edge_bel.end(),-1);
         fill(dfn.begin(),dfn.end(),0);
         fill(low.begin(),low.end(),0);
         fill(cut.begin(),cut.end(),0);

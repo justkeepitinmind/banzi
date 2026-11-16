@@ -140,6 +140,20 @@ void test_graphs(){
             for(int u:block){assert(!(mask>>(u-1)&1));mask |= 1<<(u-1);}
             actual.push_back(mask);
         }
+        // 用暴力点双的端点包含关系，验证每条非自环边唯一的点双归属。
+        assert((int)v.edge_bel.size() == m);
+        for(int id=0;id<m;++id){
+            auto [x,y] = edges[id];
+            if(x == y){assert(v.edge_bel[id] == -1);continue;}
+            int c = v.edge_bel[id],count = 0;
+            assert(c >= 0 && c < (int)v.bcc.size());
+            int endpoints = (1<<(x-1)) | (1<<(y-1));
+            for(int mask:expected)if((mask&endpoints) == endpoints){
+                ++count;
+                assert(actual[c] == mask);
+            }
+            assert(count == 1);
+        }
         sort(expected.begin(),expected.end()),sort(actual.begin(),actual.end());
         assert(expected == actual);
         auto tr = v.block_tree();
@@ -160,10 +174,22 @@ void test_graphs(){
         int bridge_edges = 0;
         for(auto list:e.bridge_tree())bridge_edges += list.size();
         assert(bridge_edges == 2*(e.cnt-base));
-        auto old_s = s.bel,old_e = e.bel;
+        auto old_s = s.bel,old_e = e.bel,old_edge_bel = v.edge_bel;
         s.run(),e.run(),v.run(); // 多次 run 必须重置状态。
         assert(s.bel == old_s && e.bel == old_e && v.bcc.size() == actual.size());
+        assert(v.edge_bel == old_edge_bel);
     }
+    // 桥、割点两侧的块、平行边、自环；加边后重跑会把旧块合并。
+    VBCC v(5);
+    v.add(1,2),v.add(2,3),v.add(3,1),v.add(3,4),v.add(4,5),v.add(4,5);
+    int loop = v.add(4,4);
+    v.run();
+    assert(v.edge_bel[0] == v.edge_bel[1] && v.edge_bel[1] == v.edge_bel[2]);
+    assert(v.edge_bel[3] != v.edge_bel[0] && v.edge_bel[3] != v.edge_bel[4]);
+    assert(v.edge_bel[4] == v.edge_bel[5] && v.edge_bel[loop] == -1);
+    v.add(5,1),v.run();
+    assert(v.bcc.size() == 1);
+    for(int id=0;id<v.m;++id)assert(v.edge_bel[id] == (id == loop ? -1 : 0));
     cout << "SCC/BCC/block forest: 1800 random multigraphs OK\n";
 }
 
