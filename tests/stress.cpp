@@ -3,6 +3,7 @@
 #include "../scc.cpp"
 #include "../bcc.cpp"
 #include "../flow.cpp"
+#include "../hlpp.cpp"
 #include "../ntt.cpp"
 
 mt19937_64 rng(20261116);
@@ -194,6 +195,61 @@ void test_dinic(){
     cout << "Dinic: 2200 exhaustive min-cut comparisons + 64-bit capacity OK\n";
 }
 
+void test_hlpp(){
+    for(int tc=0;tc<4500;++tc){
+        int n = rnd(2,9),m = rnd(0,50),s = rnd(1,n),t = rnd(1,n);
+        while(s == t)t = rnd(1,n);
+        HLPP f(n);
+        vector<tuple<int,int,ll>> edges;
+        vector<int> ids;
+        for(int i=0;i<m;++i){
+            int u = rnd(1,n),v = rnd(1,n);ll c = rnd(0,30);
+            ids.push_back(f.add(u,v,c)),edges.push_back({u,v,c});
+        }
+        ll want = LLONG_MAX;
+        for(int mask=0;mask<(1<<n);++mask)if((mask>>(s-1)&1) && !(mask>>(t-1)&1)){
+            ll cut = 0;
+            for(auto [u,v,c]:edges)if((mask>>(u-1)&1) && !(mask>>(v-1)&1))cut += c;
+            want = min(want,cut);
+        }
+        assert(f.run(s,t) == want);
+        ll cut = 0;
+        vector<ll> balance(n+1);
+        for(int i=0;i<m;++i){
+            auto [u,v,c] = edges[i];
+            if(f.source_side(u) && !f.source_side(v))cut += c;
+            int id = ids[i];
+            if(u == v){assert(id == -1);continue;}
+            ll flow = f.e[id^1].cap;
+            assert(0 <= flow && flow <= c && f.e[id].cap+flow == c);
+            balance[u] -= flow,balance[v] += flow;
+        }
+        assert(cut == want && f.source_side(s) && !f.source_side(t));
+        for(int u=1;u<=n;++u){
+            ll expected = u == s ? -want : (u == t ? want : 0);
+            assert(balance[u] == expected && f.ex[u] == expected);
+        }
+    }
+    for(int tc=0;tc<500;++tc){
+        int n = rnd(10,150),m = rnd(0,4000),s = rnd(1,n),t = rnd(1,n);
+        while(s == t)t = rnd(1,n);
+        HLPP f(n);Dinic d(n);
+        for(int i=0;i<m;++i){
+            int u = rnd(1,n),v = rnd(1,n);ll cap = rnd(0,1000000000);
+            f.add(u,v,cap),d.add(u,v,cap);
+        }
+        assert(f.run(s,t) == d.run(s,t));
+    }
+    HLPP big(2);
+    big.add(1,2,LLONG_MAX);
+    assert(big.run(1,2) == LLONG_MAX);
+    HLPP disconnected(4);
+    disconnected.add(1,2,LLONG_MAX),disconnected.add(2,3,LLONG_MAX);
+    assert(disconnected.run(1,4) == 0);
+    assert(disconnected.ex[1] == 0 && disconnected.ex[2] == 0 && disconnected.ex[3] == 0);
+    cout << "HLPP: 4500 exhaustive min-cut + 500 Dinic comparisons + 64-bit boundaries OK\n";
+}
+
 struct CostEdge{int u,v,cap,cost;};
 void enumerate_flow(int i,int n,const vector<CostEdge>& e,vector<int>& bal,ll cost,ll limit,pair<ll,ll>& best){
     if(i == (int)e.size()){
@@ -262,6 +318,6 @@ void test_ntt(){
 }
 
 int main(){
-    test_lines();test_hash();test_graphs();test_dinic();test_mcmf();test_ntt();
+    test_lines();test_hash();test_graphs();test_dinic();test_hlpp();test_mcmf();test_ntt();
     cout << "ALL OK\n";
 }

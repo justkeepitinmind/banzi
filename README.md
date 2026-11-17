@@ -10,6 +10,7 @@ C++17，按函数/结构体复制使用。新增代码用固定数值类型，�
 | [scc.cpp](scc.cpp) | Tarjan 强连通分量、缩点 DAG | `O(n+m)` |
 | [bcc.cpp](bcc.cpp) | 点双、割点、圆方树；边双、桥、桥树 | `O(n+m)` |
 | [flow.cpp](flow.cpp) | Dinic、势能 Dijkstra 最小费用最大流 | 见文件注释 |
+| [hlpp.cpp](hlpp.cpp) | 备用最大流：最高标号预流推进 + gap | `O(n² sqrt(m))` |
 | [ntt.cpp](ntt.cpp) | `998244353` 卷积、正/逆 NTT | `O(n log n)` |
 
 ## 动态凸包与李超树
@@ -123,6 +124,17 @@ auto [flow,cost] = f.run(s,t);      // 最小费用最大流。
 
 两者要求 `s != t`，`run` 修改残量网络，重复调用返回**本次新增**的流量/费用。`limit` 默认 `LLONG_MAX`。容量和总流量要装进 `ll`；费用流的费用、距离、势能和运算中间值还须满足文件中的数值范围。指定流量提前停止时不能直接把当前可达集当作最小割。
 
+备用最大流单独放在 [hlpp.cpp](hlpp.cpp)，不影响原来的 Dinic、费用流：
+
+```cpp
+HLPP f(n);
+int id = f.add(u,v,cap); // 自环忽略并返回 -1，其他边返回正向残量边下标。
+ll ans = f.run(s,t);
+// f.source_side(u)：最小割源侧；id != -1 时 f.e[id^1].cap 为该输入边流量。
+```
+
+该实现改写自 [KACTL PushRelabel](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/PushRelabel.h)，使用高度桶选最高活跃点、当前弧和 gap 优化，无递归。点编号为 `1..n`，允许重边，忽略自环；无向容量边分别加两个方向。**同一对象只能 `run` 一次，运行后不能再加边，也没有 `limit` 参数。** 初始化会推满所有源点出边，因此要求源点出边容量之和不超过 `LLONG_MAX`，即使最终最大流很小也要满足这一点。实际速度取决于图结构，不保证所有题都比 Dinic 快。
+
 ## NTT
 
 ```cpp
@@ -143,7 +155,7 @@ g++-15 -std=c++17 -O2 -Wall -Wextra tests/stress.cpp -o /tmp/banzi-stress
 /tmp/banzi-stress
 ```
 
-测试包含 10100 组随机样例与额外边界检查：直线查询对拍遍历所有直线；SCC 对拍传递闭包；割点/桥对拍删点/删边；点双对拍枚举所有极大无割点连通诱导子图；圆方森林检查分支数和无环性；Dinic 对拍枚举最小割；费用流对拍枚举所有整数可行流；NTT 对拍朴素卷积。此外有哈希 100000 次操作、大整数边界、重复运行、NTT 正逆变换及大规模卷积检查。原有 `geo.cpp` 不在这次测试范围内。
+测试包含 15100 组随机样例与额外边界检查：直线查询对拍遍历所有直线；SCC 对拍传递闭包；割点/桥对拍删点/删边；点双对拍枚举所有极大无割点连通诱导子图；圆方森林检查分支数和无环性；Dinic 对拍枚举最小割；HLPP 用 4500 组小图对拍枚举最小割并检查流量守恒、另用 500 组较大图对拍 Dinic；费用流对拍枚举所有整数可行流；NTT 对拍朴素卷积。此外有哈希 100000 次操作、大整数边界、重复运行、NTT 正逆变换及大规模卷积检查。原有 `geo.cpp` 不在这次测试范围内。
 
 ## 参考
 
@@ -151,4 +163,5 @@ g++-15 -std=c++17 -O2 -Wall -Wextra tests/stress.cpp -o /tmp/banzi-stress
 - [KACTL HashMap](https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/HashMap.h)、[GCC PBDS 文档](https://gcc.gnu.org/onlinedocs/libstdc++/manual/policy_data_structures_design.html)：构造、接口与 resize 策略。
 - [KACTL SCC](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/SCC.h)、[KACTL 双连通分量](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/BiconnectedComponents.h)、[OI Wiki 圆方树](https://oi-wiki.org/graph/block-forest/)：用于核对算法与定义；这里采用普通递归函数，没有回调模板。
 - [KACTL Dinic](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/Dinic.h)、[KACTL 最小费用流](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/MinCostMaxFlow.h)：网络流参考；这里采用普通 Dinic 和标准堆 Dijkstra。
+- [KACTL PushRelabel](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/PushRelabel.h)：HLPP 备用版本来源，保留作者与 CC0 来源；改用边编号和当前弧下标，源汇不入活跃桶。
 - [KACTL NTT](https://github.com/kth-competitive-programming/kactl/blob/main/content/numerical/NumberTheoreticTransform.h)：单位根缓存写法，保留作者与 CC0 来源。
