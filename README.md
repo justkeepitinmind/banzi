@@ -5,7 +5,7 @@ C++17，按函数/结构体复制使用。新增代码用固定数值类型，�
 | 文件 | 内容 | 主要复杂度 |
 | --- | --- | --- |
 | [geo.cpp](geo.cpp) | 原有计算几何板子 | 见函数注释 |
-| [lichao.cpp](lichao.cpp) | KACTL 动态凸包、离散李超树、区间加线 | 整线插入/查询 `O(log n)`，区间插入 `O(log² n)` |
+| [line_container.cpp](line_container.cpp) | KACTL 动态凸包 | 插入均摊 `O(log n)`，查询 `O(log n)` |
 | [gp_hash_table.cpp](gp_hash_table.cpp) | 随机整数哈希、基本操作、预分配、二元组键 | 通常均摊 `O(1)`，非最坏保证 |
 | [scc.cpp](scc.cpp) | Tarjan 强连通分量、缩点 DAG | `O(n+m)` |
 | [bcc.cpp](bcc.cpp) | 点双、割点、圆方树；边双、桥、桥树 | `O(n+m)` |
@@ -13,9 +13,9 @@ C++17，按函数/结构体复制使用。新增代码用固定数值类型，�
 | [hlpp.cpp](hlpp.cpp) | 备用最大流：最高标号预流推进 + gap | `O(n² sqrt(m))` |
 | [ntt.cpp](ntt.cpp) | `998244353` 卷积、正/逆 NTT | `O(n log n)` |
 
-## 动态凸包与李超树
+## 动态凸包 LineContainer
 
-你给的 [KACTL LineContainer](https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/LineContainer.h) 是用 `multiset` 维护的动态凸包。加线、查询顺序都可以任意；插入均摊 `O(log n)`，查询 `O(log n)`，无需限定横坐标范围。它与李超树解决的问题相近，数据结构不同。
+你给的 [KACTL LineContainer](https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/LineContainer.h) 是用 `multiset` 维护的动态凸包。加线、查询顺序都可以任意；插入均摊 `O(log n)`，查询 `O(log n)`，无需限定横坐标范围。仅支持整条直线插入，不支持区间加线或删除。
 
 ```cpp
 LineContainer h; // 最大值；查询前至少插一条线。
@@ -24,18 +24,9 @@ h.add(-1,8);
 ll ans = h.query(4); // 11
 ```
 
-交点除法要向下取整；相同斜率只留更优直线。`LineContainer` 沿用 KACTL 的全 `ll` 写法：斜率/截距差值、交点除法以及查询的 `k*x+b` 中间计算都须装进 `ll`，查询横坐标满足 `|x| < LLONG_MAX`（避开交点哨兵）。例如 `|k|,|b|,|x| <= 1e9` 时可以安全使用。下方李超树仍保留 `i128` 求值和返回值。
+交点除法要向下取整；相同斜率只留更优直线。`LineContainer` 沿用 KACTL 的全 `ll` 写法：斜率/截距差值、交点除法以及查询的 `k*x+b` 中间计算都须装进 `ll`，查询横坐标满足 `|x| < LLONG_MAX`（避开交点哨兵）。例如 `|k|,|b|,|x| <= 1e9` 时可以安全使用。
 
-离散李超树适合能预读所有询问横坐标、或者还需要**区间加线**的题。横坐标只做排序去重，不要求等距；比较函数值时仍用真实坐标。
-
-```cpp
-LiChao t({-5,0,4,10}); // 最小值；仅能询问已登记坐标。
-t.add(2,3);            // 在全部横坐标上加入 y = 2x+3。
-t.add_segment(0,4,-1,1); // 在原坐标闭区间 [0,4] 加入 y = -x+1。
-i128 ans = t.query(4); // -3
-```
-
-李超树允许 `|k|,|b|,|x| <= 1e18`，没有覆盖询问点的直线时返回 `LiChao::inf`。求最大值/最小值切换可以将插入的 `k,b` 和答案一起取负；空值要先判断，且对 `ll` 取负时不能输入 `LLONG_MIN`。两种结构都不支持删线。
+求最小值时插入 `(-k,-b)`，查询答案再取负；对 `ll` 取负时不能输入 `LLONG_MIN`。
 
 ## gp_hash_table
 

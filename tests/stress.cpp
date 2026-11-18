@@ -1,4 +1,4 @@
-#include "../lichao.cpp"
+#include "../line_container.cpp"
 #include "../gp_hash_table.cpp"
 #include "../scc.cpp"
 #include "../bcc.cpp"
@@ -13,25 +13,15 @@ void test_lines(){
     for(int tc=0;tc<1200;++tc){
         vector<ll> x;
         for(int i=0;i<20;++i)x.push_back(rnd(-40,40));
-        LiChao lc(x);
         LineContainer hull;
-        struct Seg{ll l,r,k,b;};
-        vector<Seg> a;
         vector<pair<ll,ll>> lines;
         for(int it=0;it<60;++it){
             ll k = rnd(-100,100),b = rnd(-100,100);
             hull.add(k,b),lines.push_back({k,b});
-            if(rnd(0,1))lc.add(k,b),a.push_back({LLONG_MIN,LLONG_MAX,k,b});
-            else{
-                ll l = rnd(-60,60),r = rnd(-60,60);
-                if(l > r)swap(l,r);
-                lc.add_segment(l,r,k,b),a.push_back({l,r,k,b});
-            }
             for(ll q:x){
-                i128 mn = LiChao::inf,mx = -LiChao::inf;
-                for(auto s:a)if(s.l <= q && q <= s.r)mn = min(mn,(i128)s.k*q+s.b);
-                for(auto [kk,bb]:lines)mx = max(mx,(i128)kk*q+bb);
-                assert(lc.query(q) == mn && hull.query(q) == mx);
+                ll mx = LLONG_MIN;
+                for(auto [kk,bb]:lines)mx = max(mx,kk*q+bb);
+                assert(hull.query(q) == mx);
             }
         }
     }
@@ -43,8 +33,8 @@ void test_lines(){
     for(ll k:v)for(ll b:v){
         h.add(k,b),lines.push_back({k,b});
         for(ll x:v){
-            i128 ans = -LiChao::inf;
-            for(auto [kk,bb]:lines)ans = max(ans,(i128)kk*x+bb);
+            ll ans = LLONG_MIN;
+            for(auto [kk,bb]:lines)ans = max(ans,kk*x+bb);
             assert(h.query(x) == ans);
         }
     }
@@ -56,13 +46,6 @@ void test_lines(){
     LineContainer near_limit;
     near_limit.add(1,LLONG_MAX-2);
     assert(near_limit.query(1) == LLONG_MAX-1);
-    LiChao one({-1000000000000000000LL,1000000000000000000LL});
-    assert(one.query(1000000000000000000LL) == LiChao::inf);
-    one.add(1000000000000000000LL,-1000000000000000000LL);
-    assert(one.query(1000000000000000000LL) == (i128)1000000000000000000LL*1000000000000000000LL-1000000000000000000LL);
-    LiChao single({7,7});single.add_segment(8,9,1,2);
-    assert(single.query(7) == LiChao::inf);
-    single.add_segment(7,7,3,4);assert(single.query(7) == 25);
     cout << "lines: 1200 random cases + integer boundaries OK\n";
 }
 
