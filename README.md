@@ -21,10 +21,10 @@ C++17，按函数/结构体复制使用。新增代码用固定数值类型，�
 LineContainer h; // 最大值；查询前至少插一条线。
 h.add(2,3);      // y = 2x+3
 h.add(-1,8);
-i128 ans = h.query(4); // 11
+ll ans = h.query(4); // 11
 ```
 
-交点除法要向下取整；相同斜率只留更优直线。这版将交点差值、乘法和返回值放进 `i128`，包括 `ll` 极值也能比较。返回值确定装得下 `ll` 时再强转输出。
+交点除法要向下取整；相同斜率只留更优直线。`LineContainer` 沿用 KACTL 的全 `ll` 写法：斜率/截距差值、交点除法以及查询的 `k*x+b` 中间计算都须装进 `ll`，查询横坐标满足 `|x| < LLONG_MAX`（避开交点哨兵）。例如 `|k|,|b|,|x| <= 1e9` 时可以安全使用。下方李超树仍保留 `i128` 求值和返回值。
 
 离散李超树适合能预读所有询问横坐标、或者还需要**区间加线**的题。横坐标只做排序去重，不要求等距；比较函数值时仍用真实坐标。
 
@@ -159,7 +159,7 @@ g++-15 -std=c++17 -O2 -Wall -Wextra tests/stress.cpp -o /tmp/banzi-stress
 
 ## 参考
 
-- [KACTL LineContainer](https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/LineContainer.h)：动态凸包主体，保留作者与 CC0 来源；本版加宽整数运算。
+- [KACTL LineContainer](https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/LineContainer.h)：动态凸包主体，保留作者与 CC0 来源；沿用全 `ll` 写法。
 - [KACTL HashMap](https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/HashMap.h)、[GCC PBDS 文档](https://gcc.gnu.org/onlinedocs/libstdc++/manual/policy_data_structures_design.html)：构造、接口与 resize 策略。
 - [KACTL SCC](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/SCC.h)、[KACTL 双连通分量](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/BiconnectedComponents.h)、[OI Wiki 圆方树](https://oi-wiki.org/graph/block-forest/)：用于核对算法与定义；这里采用普通递归函数，没有回调模板。
 - [KACTL Dinic](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/Dinic.h)、[KACTL 最小费用流](https://github.com/kth-competitive-programming/kactl/blob/main/content/graph/MinCostMaxFlow.h)：网络流参考；这里采用普通 Dinic 和标准堆 Dijkstra。

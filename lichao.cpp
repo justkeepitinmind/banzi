@@ -3,26 +3,28 @@ using namespace std;
 using ll = long long;
 using i128 = __int128_t;
 
-// 两种写法按需抄。k、b、x 用 ll，乘法/答案用 i128。
+// 两种写法按需抄：LineContainer 全用 ll；LiChao 的乘法/答案用 i128。
 // 1. 动态凸包：任意顺序加整条直线，查询最大值；无需预知横坐标。
-// KACTL LineContainer，Simon Lindholm，CC0；交点改用 i128 防差值溢出。
+// KACTL LineContainer，Simon Lindholm，CC0。
 // https://github.com/kth-competitive-programming/kactl/blob/main/content/data-structures/LineContainer.h
 // add 均摊 O(log n)，query O(log n)，空间 O(n)。
+// 差值、交点除法及 k*x+b 的中间计算须装进 ll，查询满足 |x| < LLONG_MAX。
+// 例如 |k|、|b|、|x| <= 1e9 时可以安全使用。
 struct HullLine{
     ll k,b;
-    mutable i128 p; // 本条直线胜过下一条的最右整数横坐标。
+    mutable ll p; // 本条直线胜过下一条的最右整数横坐标。
     bool operator<(const HullLine& a)const{return k < a.k;}
     bool operator<(ll x)const{return p < x;}
 };
 struct LineContainer:multiset<HullLine,less<>>{
-    static constexpr i128 inf = (i128)1<<126;
-    i128 div(i128 a,i128 b){ // 向下取整，不能直接用 C++ 的 a/b。
+    static constexpr ll inf = LLONG_MAX;
+    ll div(ll a,ll b){ // 向下取整，不能直接用 C++ 的 a/b。
         return a/b-((a < 0) != (b < 0) && a%b != 0);
     }
     bool isect(iterator x,iterator y){
         if(y == end())return x->p = inf,false;
         if(x->k == y->k)x->p = x->b > y->b ? inf : -inf;
-        else x->p = div((i128)y->b-x->b,(i128)x->k-y->k);
+        else x->p = div(y->b-x->b,x->k-y->k);
         return x->p >= y->p;
     }
     void add(ll k,ll b){
@@ -31,10 +33,10 @@ struct LineContainer:multiset<HullLine,less<>>{
         if(x != begin() && isect(--x,y))isect(x,y = erase(y));
         while((y = x) != begin() && (--x)->p >= y->p)isect(x,erase(y));
     }
-    i128 query(ll x)const{
+    ll query(ll x)const{
         assert(!empty());
         auto l = *lower_bound(x);
-        return (i128)l.k*x+l.b;
+        return l.k*x+l.b;
     }
 };
 

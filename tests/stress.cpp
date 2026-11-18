@@ -35,8 +35,9 @@ void test_lines(){
             }
         }
     }
-    // 大整数、相同斜率、交点超出 ll 横坐标范围。
-    vector<ll> v = {LLONG_MIN,LLONG_MIN+1,-1,0,1,LLONG_MAX-1,LLONG_MAX};
+    // ll 安全范围：大整数、相同斜率、负交点向下取整。
+    static_assert(is_same_v<decltype(LineContainer().query(0)),ll>);
+    vector<ll> v = {-1000000000,-1,0,1,1000000000};
     LineContainer h;
     vector<pair<ll,ll>> lines;
     for(ll k:v)for(ll b:v){
@@ -47,6 +48,14 @@ void test_lines(){
             assert(h.query(x) == ans);
         }
     }
+    LineContainer wide;
+    wide.add(-1,-4000000000000000000LL);
+    wide.add(0,4000000000000000000LL);
+    wide.add(1,-4000000000000000000LL);
+    for(ll x:v)assert(wide.query(x) == 4000000000000000000LL);
+    LineContainer near_limit;
+    near_limit.add(1,LLONG_MAX-2);
+    assert(near_limit.query(1) == LLONG_MAX-1);
     LiChao one({-1000000000000000000LL,1000000000000000000LL});
     assert(one.query(1000000000000000000LL) == LiChao::inf);
     one.add(1000000000000000000LL,-1000000000000000000LL);
